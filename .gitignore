@@ -1,23 +1,15 @@
-# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-
-# Distribution
 *.zip
 dist/
 build/
-
-# OS
 .DS_Store
 Thumbs.db
 desktop.ini
-
-# Editor
 .vscode/
 .idea/
 *.swp
 *.swo
-# GitLab submission — not part of the repo
 metadata_gitlab_submission.json

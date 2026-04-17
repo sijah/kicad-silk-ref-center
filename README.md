@@ -18,7 +18,7 @@ KiCad 9.0 action plugin — moves every footprint's silkscreen reference designa
 
 1. Open KiCad PCB Editor
 2. Tools → Plugin and Content Manager
-3. Install from File → select `com.github.sijah.center-silk-ref-1.2.0.zip`
+3. Install from File → select `com.github.sijah.center-silk-ref-1.0.0.zip`
 4. Restart KiCad or reload plugins
 
 ## Manual installation

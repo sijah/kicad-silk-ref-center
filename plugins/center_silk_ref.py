@@ -1,21 +1,19 @@
 """
-center_silk_ref.py  —  Center Silk Reference in Courtyard  v1.2
-KiCad 9.0 Action Plugin  |  AptEner Mechatronics
+center_silk_ref.py  —  Center Silk Reference in Courtyard  v1.0.0
+KiCad 9.0 Action Plugin  |  Sijah AK
 
-What's new in v1.2
-------------------
-  * Rotation control -- choose 0 deg (horizontal), match footprint rotation,
-                        or keep the existing text rotation unchanged
+Moves the F/B.Silkscreen reference designator of every footprint to the
+centroid of its courtyard bounding box.
 
-What's new in v1.1
-------------------
-  * Settings dialog  -- choose scope, side, text-fit, min size before running
+Features
+--------
+  * Settings dialog  -- configure all options before running
   * Scope control    -- all footprints OR selected-only
   * Side filter      -- front only, back only, or both
-  * Text scale-down  -- auto-shrink ref to fit inside courtyard (configurable min)
-  * Pad collision    -- nudge text out of pad copper when centroid overlaps
+  * Rotation control -- match footprint, always 0 deg, or keep existing
+  * Text scale-down  -- auto-shrink ref to fit inside courtyard
+  * Pad collision    -- nudge text away from pad copper
   * Back-side support -- handles B.CrtYd / B.SilkS correctly
-  * Single undo step  -- entire operation commits as one transaction (one Ctrl+Z)
   * Skip-list CSV    -- optionally export skipped components to a file
 """
 
