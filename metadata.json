@@ -2,18 +2,18 @@
     "$schema": "https://go.kicad.org/pcm/schemas/v2",
     "name": "Center Silk Reference in Courtyard",
     "description": "Moves every F/B.Silkscreen reference to its courtyard centroid with rotation, pad nudging and text scaling.",
-    "description_full": "v1.2: Rotation control \u2014 match footprint rotation, always 0\u00b0, or keep existing.\n\nv1.1: Settings dialog before each run lets you choose scope (all or selected footprints), board side (front, back, or both), automatic text scale-down to fit inside the courtyard (with a configurable minimum height), pad-collision nudging that shifts the text away from pad copper, and optional CSV export of skipped footprints.\n\nThe entire operation is committed as a single undo transaction \u2014 one Ctrl+Z reverses all moves. Back-side footprints (B.Courtyard / B.Silkscreen) are fully supported.",
-    "identifier": "com.aptener.center-silk-ref",
+    "description_full": "Action plugin for KiCad 9.0 that moves every footprint's silkscreen reference designator to the centroid of its courtyard bounding box.\n\nv1.2: Rotation control — match footprint rotation, always 0°, or keep existing.\n\nv1.1: Settings dialog, scope control (all or selected), side filter (front/back/both), auto text scale-down to fit courtyard, pad collision nudging, back-side support (B.Courtyard / B.Silkscreen), single undo transaction, optional CSV export of skipped footprints.",
+    "identifier": "com.github.sijah.center-silk-ref",
     "type": "plugin",
     "author": {
-        "name": "AptEner Mechatronics",
+        "name": "Sijah AK",
         "contact": {
-            "web": "https://aptener.com"
+            "web": "https://github.com/sijah/kicad-silk-ref-center"
         }
     },
     "license": "MIT",
     "resources": {
-        "homepage": "https://github.com/aptener/kicad-center-silk-ref"
+        "homepage": "https://github.com/sijah/kicad-silk-ref-center"
     },
     "versions": [
         {

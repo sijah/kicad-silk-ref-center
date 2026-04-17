@@ -19,3 +19,5 @@ desktop.ini
 .idea/
 *.swp
 *.swo
+# GitLab submission — not part of the repo
+metadata_gitlab_submission.json

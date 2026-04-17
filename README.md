@@ -1,4 +1,4 @@
-# kicad-center-silk-ref
+# kicad-silk-ref-center
 
 KiCad 9.0 action plugin — moves every footprint's silkscreen reference designator to the centroid of its courtyard bounding box.
 
@@ -18,21 +18,20 @@ KiCad 9.0 action plugin — moves every footprint's silkscreen reference designa
 
 1. Open KiCad PCB Editor
 2. Tools → Plugin and Content Manager
-3. Install from File → select `com.aptener.center-silk-ref-x.x.x.zip`
+3. Install from File → select `com.github.sijah.center-silk-ref-1.2.0.zip`
 4. Restart KiCad or reload plugins
 
 ## Manual installation
 
-Copy the entire `plugins/` folder contents into your KiCad scripting plugins directory:
+Copy the `plugins/` folder contents into your KiCad scripting plugins directory:
 
 | OS | Path |
 |---|---|
-| Windows | `%APPDATA%\kicad\9.0\scripting\plugins\com_aptener_center-silk-ref\` |
-| Linux | `~/.local/share/kicad/9.0/scripting/plugins/com_aptener_center-silk-ref\` |
-| macOS | `~/Library/Preferences/kicad/9.0/scripting/plugins/com_aptener_center-silk-ref\` |
+| Windows | `%APPDATA%\kicad\9.0\scripting\plugins\com_github_sijah_center-silk-ref\` |
+| Linux | `~/.local/share/kicad/9.0/scripting/plugins/com_github_sijah_center-silk-ref\` |
+| macOS | `~/Library/Preferences/kicad/9.0/scripting/plugins/com_github_sijah_center-silk-ref\` |
 
-Then in KiCad PCB Editor, reload plugins:
-
+Then reload plugins in KiCad PCB Editor:
 ```
 Tools → Scripting Console → import pcbnew; pcbnew.LoadPlugins()
 ```
@@ -49,6 +48,10 @@ Tools → Scripting Console → import pcbnew; pcbnew.LoadPlugins()
 - KiCad 9.0 or later
 - Python 3.x (bundled with KiCad)
 
+## Author
+
+Sijah AK — [github.com/sijah](https://github.com/sijah)
+
 ## License
 
-MIT © 2026 AptEner Mechatronics
+MIT © 2026 Sijah AK
