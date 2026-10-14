@@ -8,13 +8,18 @@ from unittest import mock
 
 for name in ("wx", "kipy", "kipy.board_types", "kipy.geometry",
              "kipy.proto", "kipy.proto.common", "kipy.proto.common.types",
-             "kipy.util", "kipy.util.units"):
+             "kipy.util", "kipy.util.units", "kipy.proto.common.commands",
+             "kipy.proto.common.commands.editor_commands_pb2",
+             "google", "google.protobuf", "google.protobuf.internal",
+             "google.protobuf.internal.encoder"):
     sys.modules[name] = mock.MagicMock()
 sys.modules["kipy.util.units"].from_mm = lambda mm: int(mm * 1_000_000)
 sys.modules["wx"].Dialog = object
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "plugins"))
 from center_silk_ref import _matches, _auto_side, run_silk_ref_tools  # noqa: E402
+import center_silk_ref  # noqa: E402
+center_silk_ref._with_header = lambda msg, field_no, doc: msg   # protobuf is stubbed here
 
 
 def fp(ref, value, lib):
@@ -44,7 +49,7 @@ res = run_silk_ref_tools(board, dict(scope="all", do_center=False, do_visibility
                                      visible=True, do_resize=False))
 assert res["visibility_changed"] == 1
 board.update_items.assert_called_once_with([hidden])
-board.push_commit.assert_called_once()
+assert board.client.send.call_count == 2              # begin + end commit
 
 assert _auto_side(0) == "above"
 assert _auto_side(180) == "above"

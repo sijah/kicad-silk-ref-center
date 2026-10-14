@@ -1,5 +1,5 @@
 """
-center_silk_ref.py  —  Silk Reference Tools  v2.0.0
+center_silk_ref.py  —  Silk Reference Tools  v2.0.1
 KiCad IPC API Plugin  |  Sijah AK
 
 A single plugin/action that combines three operations on footprint
@@ -30,13 +30,18 @@ from kipy.board_types import BoardLayer
 from kipy.geometry import Vector2
 from kipy.proto.common.types import KiCadObjectType, HorizontalAlignment, VerticalAlignment
 from kipy.util.units import from_mm
+from kipy.proto.common.commands.editor_commands_pb2 import (
+    BeginCommit, BeginCommitResponse, EndCommit, EndCommitResponse, CommitAction,
+)
+from kipy.proto.common.types import ItemHeader
+from google.protobuf.internal.encoder import _VarintBytes
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Constants
 # ─────────────────────────────────────────────────────────────────────────────
 
-__version__     = "2.0.0"              # single source of truth — shown in dialog titles
+__version__     = "2.0.1"              # single source of truth — shown in dialog titles
 DEFAULT_MIN_MM  = 0.4                  # minimum text height in mm, for courtyard fit
 PAD_CLEARANCE   = from_mm(0.15)        # nudge clearance from pad edge, nm
 OUTSIDE_GAP     = from_mm(0.2)         # gap between courtyard and text for above/below/left/right, nm
@@ -640,6 +645,44 @@ def _process_side(fp, cyd_layer, opts, result):
     return True
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Commits that name their document
+# ─────────────────────────────────────────────────────────────────────────────
+# KiCad 10.0.7+ rejects BeginCommit/EndCommit without a document when more
+# than one editor is open ("BeginCommit without a document specified is not
+# allowed when multiple editors are open").  kicad-python <= 0.8.0 has no
+# header field on those messages, so append it as a raw protobuf field
+# (BeginCommit.header = 1, EndCommit.header = 4); older KiCad ignores it.
+# ponytail: drop this block and use board.begin_commit()/push_commit()/
+# drop_commit() once requirements pin a kicad-python release that sets header.
+
+_COMMIT_HAS_HEADER = "header" in BeginCommit.DESCRIPTOR.fields_by_name
+
+
+def _with_header(msg, field_no, doc):
+    if _COMMIT_HAS_HEADER:
+        msg.header.document.CopyFrom(doc)
+        return msg
+    hdr = ItemHeader()
+    hdr.document.CopyFrom(doc)
+    raw = hdr.SerializeToString()
+    return type(msg).FromString(msg.SerializeToString() + _VarintBytes((field_no << 3) | 2)
+                                + _VarintBytes(len(raw)) + raw)
+
+
+def _begin_commit(board):
+    cmd = _with_header(BeginCommit(), 1, board.document)
+    return board.client.send(cmd, BeginCommitResponse).id
+
+
+def _end_commit(board, commit_id, action, message=""):
+    cmd = EndCommit()
+    cmd.id.CopyFrom(commit_id)
+    cmd.action = action
+    cmd.message = message
+    board.client.send(_with_header(cmd, 4, board.document), EndCommitResponse)
+
+
 def run_silk_ref_tools(board, opts):
     """
     Runs the enabled operations (center / visibility / resize) over `board`
@@ -677,7 +720,7 @@ def run_silk_ref_tools(board, opts):
 
     resize_delta_nm = from_mm(opts.get("resize_delta_mm", 0.0)) if opts.get("do_resize") else 0
 
-    commit = board.begin_commit()
+    commit = _begin_commit(board)
     try:
         changed = []
         for fp in fps:
@@ -713,9 +756,9 @@ def run_silk_ref_tools(board, opts):
         # edits made in KiCad while the dialog was open.
         if changed:
             board.update_items(changed)
-        board.push_commit(commit, "Silk reference tools")
+        _end_commit(board, commit, CommitAction.CMA_COMMIT, "Silk reference tools")
     except Exception:
-        board.drop_commit(commit)
+        _end_commit(board, commit, CommitAction.CMA_DROP)
         raise
 
     return result

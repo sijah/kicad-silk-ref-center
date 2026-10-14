@@ -1,5 +1,14 @@
 # Changelog — Silk Reference Tools
 
+## v2.0.1 (2026-10-14)
+
+### Fixed
+- **"BeginCommit without a document specified is not allowed when multiple
+  editors are open"** on KiCad 10.0.7+ when the schematic editor (or another
+  editor) is open alongside the PCB editor. The plugin now names the board
+  in its commit requests. kicad-python 0.8.0 can't do this yet, so the
+  field is added by the plugin; older KiCad versions ignore it.
+
 ## v2.0.0 (2026-10-14)
 
 **Breaking: migrated from the SWIG scripting runtime to the KiCad IPC API.**

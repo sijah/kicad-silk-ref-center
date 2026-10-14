@@ -36,11 +36,11 @@ If the plugin reports **"Failed to connect to KiCad: Connection refused"**, the 
 
 ### Via PCM (recommended)
 
-1. Download `com.github.sijah.center-silk-ref-2.0.0.zip` from [Releases](https://github.com/sijah/kicad-silk-ref-center/releases)
+1. Download `com.github.sijah.center-silk-ref-2.0.1.zip` from [Releases](https://github.com/sijah/kicad-silk-ref-center/releases)
 2. KiCad → **Plugin and Content Manager** → **Install from File…** → select the zip
 3. Restart KiCad if the toolbar button doesn't appear
 
-Use 2.0.0 for KiCad 9.0 / 10.0 with the API enabled. 1.0.0 is the legacy SWIG version for KiCad 9.0 without the API.
+Use 2.0.1 for KiCad 9.0 / 10.0 with the API enabled. 1.0.0 is the legacy SWIG version for KiCad 9.0 without the API.
 
 ### Manual
 
