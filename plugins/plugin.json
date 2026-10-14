@@ -1,0 +1,27 @@
+{
+    "$schema": "https://go.kicad.org/api/schemas/v1",
+    "identifier": "com.github.sijah.center-silk-ref",
+    "name": "Silk Reference Tools",
+    "description": "Centers, hides/shows, and resizes footprint F/B.Silkscreen reference designator text.",
+    "runtime": {
+        "type": "python"
+    },
+    "actions": [
+        {
+            "identifier": "center-silk-ref",
+            "name": "Silk Reference Tools",
+            "description": "Centers reference text in the courtyard, and/or sets its visibility, and/or adjusts its size, over all or selected footprints. Single dialog for all three operations.",
+            "show-button": true,
+            "scopes": [
+                "pcb"
+            ],
+            "entrypoint": "ipc_entry.py",
+            "icons-light": [
+                "icon_24.png"
+            ],
+            "icons-dark": [
+                "icon_24.png"
+            ]
+        }
+    ]
+}

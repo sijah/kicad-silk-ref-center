@@ -1,8 +1,8 @@
 {
     "$schema": "https://go.kicad.org/pcm/schemas/v2",
-    "name": "Center Silk Reference in Courtyard",
-    "description": "Moves every F/B.Silkscreen reference to its courtyard centroid with rotation, pad nudging and text scaling.",
-    "description_full": "KiCad 9.0 action plugin that moves every footprint's silkscreen reference designator to the centroid of its courtyard bounding box.\n\nFeatures: settings dialog, scope control (all or selected), side filter (front/back/both), rotation control (match footprint, always 0°, or keep existing), auto text scale-down to fit courtyard, pad collision nudging, back-side support (B.Courtyard / B.Silkscreen), single undo transaction, optional CSV export of skipped footprints.",
+    "name": "Silk Reference Tools",
+    "description": "Centers or places, hides/shows, and resizes footprint silkscreen reference designators — one dialog, one undo step. KiCad 9 & 10 (IPC API).",
+    "description_full": "KiCad 9.0 / 10.0 IPC API plugin with one action and one settings dialog. Every checked operation is applied in a single undo step.\n\n- Scope: all footprints, selected only, or footprints matching a reference designator, value or library ID (* and ? wildcards; prefilled from the selection).\n- Reference position: move the reference to its courtyard centroid or just outside it (auto, above, below, left or right). Side filter (front/back/both), rotation control (match footprint, 0° or keep), auto scale-down to fit the courtyard, pad-collision nudging, optional CSV of skipped footprints.\n- Silkscreen: show or hide reference text in bulk; adjust its size in 0.05 mm steps (0.1–3.0 mm).\n- Theme: System / Light / Dark (KiCad 10).\n\nRequires Preferences → Plugins → Enable KiCad API. Version 1.0.0 is the legacy SWIG plugin for KiCad 9.0 without the API enabled; SWIG plugins stop working in KiCad 11.0.",
     "identifier": "com.github.sijah.center-silk-ref",
     "type": "plugin",
     "author": {
@@ -17,9 +17,16 @@
     },
     "versions": [
         {
-            "version": "1.0.0",
+            "version": "2.0.0",
             "status": "stable",
             "kicad_version": "9.0",
+            "runtime": "ipc"
+        },
+        {
+            "version": "1.0.0",
+            "status": "deprecated",
+            "kicad_version": "9.0",
+            "kicad_version_max": "9.0",
             "runtime": "swig"
         }
     ]
