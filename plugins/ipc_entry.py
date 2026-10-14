@@ -97,7 +97,9 @@ def main():
         "do_visibility":   dlg.do_visibility,
         "visible":         dlg.visible,
         "do_resize":       dlg.do_resize,
+        "resize_mode":     dlg.resize_mode,
         "resize_delta_mm": dlg.resize_delta_mm,
+        "set_height_mm":   dlg.set_height_mm,
     }
     dlg.Destroy()
 

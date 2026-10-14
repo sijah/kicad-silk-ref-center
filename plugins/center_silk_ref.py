@@ -1,5 +1,5 @@
 """
-center_silk_ref.py  —  Silk Reference Tools  v2.0.1
+center_silk_ref.py  —  Silk Reference Tools  v2.1.0
 KiCad IPC API Plugin  |  Sijah AK
 
 A single plugin/action that combines three operations on footprint
@@ -41,7 +41,7 @@ from google.protobuf.internal.encoder import _VarintBytes
 # Constants
 # ─────────────────────────────────────────────────────────────────────────────
 
-__version__     = "2.0.1"              # single source of truth — shown in dialog titles
+__version__     = "2.1.0"              # single source of truth — shown in dialog titles
 DEFAULT_MIN_MM  = 0.4                  # minimum text height in mm, for courtyard fit
 PAD_CLEARANCE   = from_mm(0.15)        # nudge clearance from pad edge, nm
 OUTSIDE_GAP     = from_mm(0.2)         # gap between courtyard and text for above/below/left/right, nm
@@ -49,6 +49,7 @@ OUTSIDE_GAP     = from_mm(0.2)         # gap between courtyard and text for abov
 REF_SIZE_STEP_MM = 0.05                # size change per +/- click in the dialog, mm
 REF_SIZE_MIN_MM  = 0.1                 # size adjustment floor, mm
 REF_SIZE_MAX_MM  = 3.0                 # size adjustment ceiling, mm
+DEFAULT_SET_HEIGHT_MM = 0.8            # initial "Set height to" value, mm
 
 THEMES = ("System", "Light", "Dark")   # names match wx.App.Appearance members
 PLUGIN_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -149,11 +150,17 @@ def _fit_text_to_courtyard(attrs, value, cyd_bb, min_height_nm, angle_deg=0.0):
     target_h = max(target_h, min_height_nm)
 
     if target_h < current_h:
-        ratio = target_h / current_h
-        attrs.size = Vector2.from_xy(max(min_height_nm, int(current_w * ratio)), target_h)
-        attrs.stroke_width = max(from_mm(0.05), target_h // 8)
+        _resize_text(attrs, target_h)
         return True
     return False
+
+
+def _resize_text(attrs, target_h):
+    """Sets text height to target_h (nm), scaling width and stroke thickness
+    by the same ratio so proportions and line weight are kept."""
+    ratio = target_h / attrs.size.y if attrs.size.y else 1.0
+    attrs.size = Vector2.from_xy(int(round(attrs.size.x * ratio)), int(target_h))
+    attrs.stroke_width = int(round(attrs.stroke_width * ratio))
 
 
 def _place_outside(bb, attrs, text, angle_deg, placement, gap):
@@ -200,31 +207,35 @@ def _matches(fp, scope, pattern):
 def _apply_size_delta(attrs, delta_nm):
     """
     Grows/shrinks attrs (TextAttributes) height by delta_nm, with
-    proportional width and stroke thickness, clamped to
-    [REF_SIZE_MIN_MM, REF_SIZE_MAX_MM].  Returns (changed, clamped) bools.
+    proportional width and stroke thickness.  The [REF_SIZE_MIN_MM,
+    REF_SIZE_MAX_MM] limits only stop the change from crossing them: text
+    already outside the range is never pushed further out or snapped back.
+    Returns (changed, clamped) bools.
     """
-    min_nm = from_mm(REF_SIZE_MIN_MM)
-    max_nm = from_mm(REF_SIZE_MAX_MM)
-
     current_h = attrs.size.y
-    current_w = attrs.size.x
-
     target_h = current_h + delta_nm
-    clamped = False
-    if target_h < min_nm:
-        target_h = min_nm
-        clamped = True
-    elif target_h > max_nm:
-        target_h = max_nm
-        clamped = True
+    if delta_nm > 0:
+        limit = max(from_mm(REF_SIZE_MAX_MM), current_h)
+        clamped = target_h > limit
+        target_h = min(target_h, limit)
+    else:
+        limit = min(from_mm(REF_SIZE_MIN_MM), current_h)
+        clamped = target_h < limit
+        target_h = max(target_h, limit)
 
     if target_h == current_h:
         return False, clamped
-
-    ratio = target_h / current_h if current_h else 1.0
-    attrs.size = Vector2.from_xy(max(min_nm, int(current_w * ratio)), target_h)
-    attrs.stroke_width = max(from_mm(0.05), target_h // 8)
+    _resize_text(attrs, target_h)
     return True, clamped
+
+
+def _apply_set_height(attrs, height_nm):
+    """Sets text height to height_nm (proportional width/stroke).
+    Returns True if it changed."""
+    if attrs.size.y == height_nm:
+        return False
+    _resize_text(attrs, height_nm)
+    return True
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -384,9 +395,13 @@ class SettingsDialog(wx.Dialog):
         add_option(vis_col, self.rb_vis_hide, indent=INDENT)
         add_option(vis_col, self.rb_vis_show, indent=INDENT)
 
-        self.cb_op_resize = wx.CheckBox(panel, label="Adjust reference text size")
+        self.cb_op_resize = wx.CheckBox(panel, label="Change reference text size")
         self.cb_op_resize.SetValue(False)
+        self.rb_size_delta = wx.RadioButton(panel, label="Adjust by", style=wx.RB_GROUP)
+        self.rb_size_set   = wx.RadioButton(panel, label="Set height to")
+        self.rb_size_delta.SetValue(True)
         resize_row = wx.BoxSizer(wx.HORIZONTAL)
+        resize_row.Add(self.rb_size_delta, flag=wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, border=8)
         self.btn_size_minus = wx.Button(panel, label="−", size=(28, -1))
         self.sp_resize_delta = wx.SpinCtrlDouble(
             panel, value="0.00",
@@ -400,9 +415,20 @@ class SettingsDialog(wx.Dialog):
         resize_row.Add(self.btn_size_plus, flag=wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, border=6)
         resize_row.Add(wx.StaticText(panel, label="mm"), flag=wx.ALIGN_CENTER_VERTICAL)
 
+        set_row = wx.BoxSizer(wx.HORIZONTAL)
+        self.sp_set_height = wx.SpinCtrlDouble(
+            panel, value=f"{DEFAULT_SET_HEIGHT_MM:.2f}",
+            min=REF_SIZE_MIN_MM, max=REF_SIZE_MAX_MM, inc=REF_SIZE_STEP_MM
+        )
+        self.sp_set_height.SetDigits(2)
+        set_row.Add(self.rb_size_set, flag=wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, border=8)
+        set_row.Add(self.sp_set_height, flag=wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, border=6)
+        set_row.Add(wx.StaticText(panel, label="mm"), flag=wx.ALIGN_CENTER_VERTICAL)
+
         size_col = wx.BoxSizer(wx.VERTICAL)
         add_option(size_col, self.cb_op_resize)
         add_option(size_col, resize_row, indent=INDENT)
+        add_option(size_col, set_row, indent=INDENT)
 
         silk_sizer.Add(vis_col,  flag=wx.ALL, border=PAD)
         silk_sizer.AddSpacer(24)
@@ -441,6 +467,8 @@ class SettingsDialog(wx.Dialog):
 
         for cb in (self.cb_op_center, self.cb_op_visibility, self.cb_op_resize, self.cb_fit):
             cb.Bind(wx.EVT_CHECKBOX, self._on_toggle)
+        for rb in (self.rb_size_delta, self.rb_size_set):
+            rb.Bind(wx.EVT_RADIOBUTTON, self._on_toggle)
         for rb in (self.rb_pl_center, self.rb_pl_auto, self.rb_pl_above, self.rb_pl_below,
                    self.rb_pl_left, self.rb_pl_right):
             rb.Bind(wx.EVT_RADIOBUTTON, self._on_toggle)
@@ -481,8 +509,12 @@ class SettingsDialog(wx.Dialog):
         for ctrl in (self.rb_vis_hide, self.rb_vis_show):
             ctrl.Enable(vis_on)
 
-        for ctrl in (self.btn_size_minus, self.btn_size_plus, self.sp_resize_delta):
+        for ctrl in (self.rb_size_delta, self.rb_size_set):
             ctrl.Enable(resize_on)
+        delta_on = resize_on and self.rb_size_delta.GetValue()
+        for ctrl in (self.btn_size_minus, self.btn_size_plus, self.sp_resize_delta):
+            ctrl.Enable(delta_on)
+        self.sp_set_height.Enable(resize_on and not delta_on)
 
     def _on_size_minus(self, evt):
         new_val = round(self.sp_resize_delta.GetValue() - REF_SIZE_STEP_MM, 2)
@@ -588,6 +620,15 @@ class SettingsDialog(wx.Dialog):
     def resize_delta_mm(self):
         return self.sp_resize_delta.GetValue()
 
+    @property
+    def resize_mode(self):
+        """Returns 'delta' or 'set'."""
+        return "set" if self.rb_size_set.GetValue() else "delta"
+
+    @property
+    def set_height_mm(self):
+        return self.sp_set_height.GetValue()
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Core processing
@@ -691,7 +732,8 @@ def run_silk_ref_tools(board, opts):
 
     opts keys: scope, scope_pattern, do_center, process_front, process_back,
     placement, fit_text, min_text_mm, nudge_pads, rotation_mode, export_csv,
-    do_visibility, visible, do_resize, resize_delta_mm.
+    do_visibility, visible, do_resize, resize_mode ('delta' | 'set'),
+    resize_delta_mm, set_height_mm.
     """
     scope = opts.get("scope", "all")
     if scope == "selected":
@@ -718,13 +760,32 @@ def run_silk_ref_tools(board, opts):
         if opts["process_back"]:
             cyd_layers.append(BoardLayer.BL_B_CrtYd)
 
-    resize_delta_nm = from_mm(opts.get("resize_delta_mm", 0.0)) if opts.get("do_resize") else 0
+    resize_mode     = opts.get("resize_mode", "delta")
+    resize_delta_nm = from_mm(opts.get("resize_delta_mm", 0.0))
+    set_height_nm   = from_mm(opts.get("set_height_mm", DEFAULT_SET_HEIGHT_MM))
 
     commit = _begin_commit(board)
     try:
         changed = []
         for fp in fps:
             touched = False
+            ref_field = fp.reference_field
+
+            # Resize first so outside placement uses the final text size
+            if ref_field is not None and opts.get("do_resize"):
+                attrs = ref_field.text.attributes
+                clamped = False
+                if resize_mode == "set":
+                    resized = _apply_set_height(attrs, set_height_nm)
+                elif resize_delta_nm:
+                    resized, clamped = _apply_size_delta(attrs, resize_delta_nm)
+                else:
+                    resized = False
+                if resized:
+                    touched = True
+                    result["resized"] += 1
+                    result["resize_clamped"] += clamped
+
             if opts["do_center"]:
                 fp_on_front = fp.layer == BoardLayer.BL_F_Cu
                 for cyd_layer in cyd_layers:
@@ -734,20 +795,11 @@ def run_silk_ref_tools(board, opts):
                         continue
                     touched |= _process_side(fp, cyd_layer, opts, result)
 
-            ref_field = fp.reference_field
-            if ref_field is not None:
-                if opts["do_visibility"] and ref_field.visible != opts["visible"]:
-                    ref_field.visible = opts["visible"]
-                    result["visibility_changed"] += 1
-                    touched = True
-
-                if opts["do_resize"] and resize_delta_nm != 0:
-                    resized, clamped = _apply_size_delta(ref_field.text.attributes, resize_delta_nm)
-                    if resized:
-                        touched = True
-                        result["resized"] += 1
-                        if clamped:
-                            result["resize_clamped"] += 1
+            if ref_field is not None and opts["do_visibility"] \
+                    and ref_field.visible != opts["visible"]:
+                ref_field.visible = opts["visible"]
+                result["visibility_changed"] += 1
+                touched = True
 
             if touched:
                 changed.append(fp)
@@ -825,11 +877,13 @@ def show_summary(result, csv_path, opts):
         lines.append(f"{action} {result['visibility_changed']} reference(s).")
 
     if opts["do_resize"]:
+        how = (f"to {opts['set_height_mm']:.2f} mm" if opts.get("resize_mode") == "set"
+               else f"by {opts['resize_delta_mm']:+.2f} mm")
         if result["resized"] == 0:
-            lines.append("Size adjustment: no change (delta was 0, or already at the size limit).")
+            lines.append(f"Size ({how}): no change — already that size, or at the size limit.")
         else:
             extra = f" ({result['resize_clamped']} hit the size limit)" if result["resize_clamped"] else ""
-            lines.append(f"Resized {result['resized']} reference(s){extra}.")
+            lines.append(f"Resized {result['resized']} reference(s) {how}{extra}.")
 
     if not lines:
         lines.append("No operations selected.")

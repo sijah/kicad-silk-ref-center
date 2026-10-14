@@ -20,7 +20,7 @@ Works on **KiCad 9.0 and 10.0**. It runs on KiCad's **IPC API** (via [kicad-pyth
 
 **Silkscreen**
 - Visibility — show or hide reference text in bulk
-- Size adjustment — `−`/`+` buttons or type a value into the mm field (0.05 mm steps, clamped 0.1–3.0 mm)
+- Text size — **adjust by** a delta (`−`/`+` buttons, 0.05 mm steps) or **set height to** an exact value (0.1–3.0 mm). Width and line thickness scale with the height, and the size is applied before placement so outside placement uses the final size
 
 **Theme** — System / Light / Dark selector at the bottom of the dialog (KiCad 10). System follows Windows dark mode; changing it reopens the dialog.
 
@@ -36,11 +36,11 @@ If the plugin reports **"Failed to connect to KiCad: Connection refused"**, the 
 
 ### Via PCM (recommended)
 
-1. Download `com.github.sijah.center-silk-ref-2.0.1.zip` from [Releases](https://github.com/sijah/kicad-silk-ref-center/releases)
+1. Download `com.github.sijah.center-silk-ref-2.1.0.zip` from [Releases](https://github.com/sijah/kicad-silk-ref-center/releases)
 2. KiCad → **Plugin and Content Manager** → **Install from File…** → select the zip
 3. Restart KiCad if the toolbar button doesn't appear
 
-Use 2.0.1 for KiCad 9.0 / 10.0 with the API enabled. 1.0.0 is the legacy SWIG version for KiCad 9.0 without the API.
+Use 2.1.0 for KiCad 9.0 / 10.0 with the API enabled. 1.0.0 is the legacy SWIG version for KiCad 9.0 without the API.
 
 ### Manual
 

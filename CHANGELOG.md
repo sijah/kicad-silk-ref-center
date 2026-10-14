@@ -1,5 +1,20 @@
 # Changelog — Silk Reference Tools
 
+## v2.1.0 (2026-10-14)
+
+### Added
+- **Set height to** — set reference text to an exact height (0.1–3.0 mm),
+  next to the existing **Adjust by** delta.
+
+### Fixed
+- Resizing (and fit-to-courtyard scaling) reset line thickness to height/8;
+  thickness now scales with the height, keeping the text's proportions.
+- Adjust-by on text already outside 0.1–3.0 mm snapped it to the limit
+  (e.g. +0.10 on 4 mm text gave 3 mm). The limits now only stop a change
+  from crossing them.
+- Size was applied after placement, so outside placement (above/below/
+  left/right) used the old size. Size now applies first.
+
 ## v2.0.1 (2026-10-14)
 
 ### Fixed
